@@ -28,10 +28,12 @@ class SerialControllerInterface:
             self.incoming = self.ser.read()
             logging.debug("Receivelllld INCOMING: {}".format(self.incoming))
 
-        data = self.ser.read(14)
+        data = self.ser.read(15)
         logging.debug("Received DATA: {}".format(data))
         data_format = (bytearray(data)).decode('ascii')
-        um, dois, A, B, cinco, seis, sete, oito, nove, dez, onze, doze, X, Y = data_format
+        #print(data_format)
+        um, dois, A, B, cinco, seis, sete, oito, nove, dez, onze, doze, treze, X, Y = data_format
+
 
         # Joystick
 

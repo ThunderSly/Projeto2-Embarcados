@@ -42,10 +42,10 @@ volatile bool g_delay = false;
 #define LED_PIO_IDX       8u
 #define LED_PIO_IDX_MASK  (1u << LED_PIO_IDX)
 
-#define LED2_PIO           PIOD
-#define LED2_PIO_ID        ID_PIOD
-#define LED2_PIO_IDX       30
-#define LED2_PIO_IDX_MASK  (1u << LED2_PIO_IDX)
+#define BUZ_PIO           PIOD
+#define BUZ_PIO_ID        ID_PIOD
+#define BUZ_PIO_IDX       30u
+#define BUZ_PIO_IDX_MASK  (1u << BUZ_PIO_IDX)
 
 // Analog Button
 #define BUT0_PIO_ID				ID_PIOC
@@ -255,7 +255,6 @@ void Button1_Handler(void){
 	press press1;
 	press1.button = 1;
 	press1.status = !pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK);
-	printf("Value: %d\n", press1.status);
 	xQueueSendFromISR(xQueueBut, &press1, 0);
  }
 
@@ -380,6 +379,17 @@ void io_init(void){
 	pio_set_input(BUT10_PIO, BUT10_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT11_PIO, BUT11_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	
+	pio_set_debounce_filter(BUT0_PIO, BUT0_PIO_IDX_MASK, BUT0_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT1_PIO, BUT1_PIO_IDX_MASK, BUT1_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT2_PIO, BUT2_PIO_IDX_MASK, BUT2_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT3_PIO, BUT3_PIO_IDX_MASK, BUT3_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT4_PIO, BUT4_PIO_IDX_MASK, BUT4_DEBOUNCING_VALUE);
+	
+	pio_set_debounce_filter(BUT8_PIO, BUT8_PIO_IDX_MASK, BUT8_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT9_PIO, BUT9_PIO_IDX_MASK, BUT9_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT10_PIO, BUT10_PIO_IDX_MASK, BUT10_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT11_PIO, BUT11_PIO_IDX_MASK, BUT11_DEBOUNCING_VALUE);
+	
 	pio_handler_set(BUT0_PIO, BUT0_PIO_ID, BUT0_PIO_IDX_MASK, PIO_IT_EDGE, Button0_Handler);
 	pio_handler_set(BUT1_PIO, BUT1_PIO_ID, BUT1_PIO_IDX_MASK, PIO_IT_EDGE, Button1_Handler);
 	pio_handler_set(BUT2_PIO, BUT2_PIO_ID, BUT2_PIO_IDX_MASK, PIO_IT_EDGE, Button2_Handler);
@@ -485,47 +495,53 @@ int hc05_server_init(void) {
 
 void task_bluetooth(void){
 	xQueueAfec = xQueueCreate( 10, sizeof( analog ) );
-	xQueueBut = xQueueCreate( 10, sizeof( press ) );
+	xQueueBut = xQueueCreate( 13, sizeof( press ) );
 	printf("Bluetooth initializing \n");
 	hc05_config_server();
 	hc05_server_init();
 	printf("init" );
 	io_init();
-	char buttons[12];
+	pio_clear(BUZ_PIO, BUZ_PIO_IDX_MASK);
+	delay_ms(200);
+	pio_set(BUZ_PIO, BUZ_PIO_IDX_MASK);
+	char buttons[13];
 	int x = 0;
 	int y = 0;
 	char axisX = '0';
 	char axisY = '0';
 	char eof = 'X';
 	press press_main;
+	char buffer[100];
 	analog axis_main;
 
 	while(1){
-		for (int i = 0; i<12; i++){
+		for (int i = 0; i<=12; i++){
 			buttons[i] = 'N';
 		}
-		if (xQueueReceive(xQueueBut, &(press_main), ( TickType_t )  10 / portTICK_PERIOD_MS)) {
+		if (xQueueReceive(xQueueBut, &(press_main), ( TickType_t )  1 / portTICK_PERIOD_MS)) {
 			printf("Button: %d   Status: %d\n", press_main.button, press_main.status);
 			if (press_main.status){
 				buttons[press_main.button] = '1';
+				pio_clear(LED_PIO, LED_PIO_IDX_MASK);
 			}
 			else{
 				buttons[press_main.button] = '0';
+				pio_set(LED_PIO, LED_PIO_IDX_MASK);
 			}
 		}
-		if (xQueueReceive(xQueueAfec, &(axis_main), ( TickType_t )  10 / portTICK_PERIOD_MS)){
+		if (xQueueReceive(xQueueAfec, &(axis_main), ( TickType_t )  1 / portTICK_PERIOD_MS)){
 			if(axis_main.axis == 0){
 				x = (convert_adc_to_axis(axis_main.value));
 				if(x>500){
-					usart_put_string(USART1, "X positivo ");
+					usart_put_string(USART1, "X positivo \n");
 					axisX = 'P';
 					} else if(x <-500){
-					usart_put_string(USART1, "X negativo ");
+					usart_put_string(USART1, "X negativo \n");
 					axisX = 'N';
 					} else{
 					
 					if (axisX != '0'){
-						usart_put_string(USART1, "X parado ");
+						usart_put_string(USART1, "X parado \n");
 						axisX = '0';
 					}
 				}
@@ -534,22 +550,25 @@ void task_bluetooth(void){
 				y = (convert_adc_to_axis(axis_main.value));
 				if(y>500){
 					usart_put_string(USART1, "Y positivo \n");
+					usart_put_string(USART1, "VAI SE FUDER ATMEL/SAME \n");
 					axisY = 'P';
 					} else if(y <-500){
 					usart_put_string(USART1, "Y negativo \n");
 					axisY = 'N';
 					} else{
-					if (axisY != '0'){
-						usart_put_string(USART1, "Y parado \n");
-						axisY = '0';
+						if (axisY != '0'){
+							usart_put_string(USART1, "Y parado \n");
+							axisY = '0';
+						}
 					}
-				}
 			}
 		}
-		for (int i = 0; i<12; i++){
+		for (int i = 0; i<=12; i++){
 			while(!usart_is_tx_ready(USART_COM));
 			usart_write(USART_COM, buttons[i]);
 		}
+		
+		while(!usart_is_tx_ready(USART_COM));
 		usart_write(USART_COM, axisX);
 		while(!usart_is_tx_ready(USART_COM));
 		usart_write(USART_COM, axisY);
@@ -582,9 +601,15 @@ int main(void){
 	sysclk_init();
 	board_init();
 	pio_set_output(LED_PIO, LED_PIO_IDX_MASK, 0, 0, 0);
-	pio_set_output(LED2_PIO, LED2_PIO_IDX_MASK, 0, 0, 0);
-	pio_clear(LED_PIO, LED_PIO_IDX_MASK);
-	pio_clear(LED2_PIO, LED2_PIO_IDX_MASK);
+	pio_set_output(BUZ_PIO, BUZ_PIO_IDX_MASK, 0, 0, 0);
+	pio_set(BUZ_PIO, BUZ_PIO_IDX_MASK);
+	//pio_clear(LED_PIO, LED_PIO_IDX_MASK);
+	//pio_set(BUZ_PIO, BUZ_PIO_IDX_MASK);
+	//delay_us(100);
+	
+	
+	
+	
 
 	/* Initialize the console uart */
 	configure_console();
@@ -592,12 +617,17 @@ int main(void){
 	/* Create task to make led blink */
 	xTaskCreate(task_bluetooth, "BLT", TASK_PROCESS_STACK_SIZE, NULL,	TASK_PROCESS_STACK_PRIORITY, NULL);
 	
+	
+	
 	if (xTaskCreate(task_afec, "afec", TASK_PROCESS_STACK_SIZE, NULL, TASK_PROCESS_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create test afec task\r\n");
 	}
-  
+	//pio_clear(BUZ_PIO, BUZ_PIO_IDX_MASK);
+
 	/* Start the scheduler. */
 	vTaskStartScheduler();
+	
+	
 
 	while(1){}
 
