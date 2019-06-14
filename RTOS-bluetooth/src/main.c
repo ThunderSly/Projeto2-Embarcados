@@ -27,7 +27,7 @@ volatile bool g_delay = false;
 #define STRING_EOL    "\r"
 #define STRING_HEADER "-- AFEC Temperature Sensor Example --\r\n" \
 "-- "BOARD_NAME" --\r\n" \
-"-- Compiled: "__DATE__" "__TIME__" --"STRING_EOL
+"a-- Compiled: "__DATE__" "__TIME__" --"STRING_EOL
 
 /** Reference voltage for AFEC,in mv. */
 #define VOLT_REF        (3300)
@@ -77,6 +77,24 @@ volatile bool g_delay = false;
 #define BUT4_PIO_IDX			21
 #define BUT4_PIO_IDX_MASK		(1 << BUT4_PIO_IDX)
 #define BUT4_DEBOUNCING_VALUE   79
+
+#define BUT5_PIO_ID				ID_PIOD
+#define BUT5_PIO				PIOD
+#define BUT5_PIO_IDX			20
+#define BUT5_PIO_IDX_MASK		(1 << BUT5_PIO_IDX)
+#define BUT5_DEBOUNCING_VALUE   79
+
+#define BUT6_PIO_ID				ID_PIOD
+#define BUT6_PIO				PIOD
+#define BUT6_PIO_IDX			26
+#define BUT6_PIO_IDX_MASK		(1 << BUT6_PIO_IDX)
+#define BUT6_DEBOUNCING_VALUE   79
+
+#define BUT7_PIO_ID				ID_PIOA
+#define BUT7_PIO				PIOA
+#define BUT7_PIO_IDX			21
+#define BUT7_PIO_IDX_MASK		(1 << BUT7_PIO_IDX)
+#define BUT7_DEBOUNCING_VALUE   79
 
 // Joystick
 #define BUT8_PIO_ID				ID_PIOA
@@ -279,6 +297,27 @@ void Button4_Handler(void){
 	xQueueSendFromISR(xQueueBut, &press4, 0);
 }
 
+void Button5_Handler(void){
+	press press5;
+	press5.button = 5;
+	press5.status = !pio_get(BUT5_PIO, PIO_INPUT, BUT5_PIO_IDX_MASK);
+	xQueueSendFromISR(xQueueBut, &press5, 0);
+}
+
+void Button6_Handler(void){
+	press press6;
+	press6.button = 6;
+	press6.status = !pio_get(BUT6_PIO, PIO_INPUT, BUT6_PIO_IDX_MASK);
+	xQueueSendFromISR(xQueueBut, &press6, 0);
+}
+
+void Button7_Handler(void){
+	press press7;
+	press7.button = 7;
+	press7.status = !pio_get(BUT7_PIO, PIO_INPUT, BUT7_PIO_IDX_MASK);
+	xQueueSendFromISR(xQueueBut, &press7, 0);
+}
+
 void Button8_Handler(void){
 	press press8;
 	press8.button = 8;
@@ -373,7 +412,9 @@ void io_init(void){
 	pio_set_input(BUT2_PIO, BUT2_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT3_PIO, BUT3_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT4_PIO, BUT4_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
-
+	pio_set_input(BUT5_PIO, BUT5_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+	pio_set_input(BUT6_PIO, BUT6_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+	pio_set_input(BUT7_PIO, BUT7_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT8_PIO, BUT8_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT9_PIO, BUT9_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_set_input(BUT10_PIO, BUT10_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
@@ -384,7 +425,9 @@ void io_init(void){
 	pio_set_debounce_filter(BUT2_PIO, BUT2_PIO_IDX_MASK, BUT2_DEBOUNCING_VALUE);
 	pio_set_debounce_filter(BUT3_PIO, BUT3_PIO_IDX_MASK, BUT3_DEBOUNCING_VALUE);
 	pio_set_debounce_filter(BUT4_PIO, BUT4_PIO_IDX_MASK, BUT4_DEBOUNCING_VALUE);
-	
+	pio_set_debounce_filter(BUT5_PIO, BUT5_PIO_IDX_MASK, BUT5_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT6_PIO, BUT6_PIO_IDX_MASK, BUT6_DEBOUNCING_VALUE);
+	pio_set_debounce_filter(BUT7_PIO, BUT7_PIO_IDX_MASK, BUT7_DEBOUNCING_VALUE);
 	pio_set_debounce_filter(BUT8_PIO, BUT8_PIO_IDX_MASK, BUT8_DEBOUNCING_VALUE);
 	pio_set_debounce_filter(BUT9_PIO, BUT9_PIO_IDX_MASK, BUT9_DEBOUNCING_VALUE);
 	pio_set_debounce_filter(BUT10_PIO, BUT10_PIO_IDX_MASK, BUT10_DEBOUNCING_VALUE);
@@ -395,7 +438,9 @@ void io_init(void){
 	pio_handler_set(BUT2_PIO, BUT2_PIO_ID, BUT2_PIO_IDX_MASK, PIO_IT_EDGE, Button2_Handler);
 	pio_handler_set(BUT3_PIO, BUT3_PIO_ID, BUT3_PIO_IDX_MASK, PIO_IT_EDGE, Button3_Handler);
 	pio_handler_set(BUT4_PIO, BUT4_PIO_ID, BUT4_PIO_IDX_MASK, PIO_IT_EDGE, Button4_Handler);
-	
+	pio_handler_set(BUT5_PIO, BUT5_PIO_ID, BUT5_PIO_IDX_MASK, PIO_IT_EDGE, Button5_Handler);
+	pio_handler_set(BUT6_PIO, BUT6_PIO_ID, BUT6_PIO_IDX_MASK, PIO_IT_EDGE, Button6_Handler);
+	pio_handler_set(BUT7_PIO, BUT7_PIO_ID, BUT7_PIO_IDX_MASK, PIO_IT_EDGE, Button7_Handler);
 	pio_handler_set(BUT8_PIO, BUT8_PIO_ID, BUT8_PIO_IDX_MASK, PIO_IT_EDGE, Button8_Handler);
 	pio_handler_set(BUT9_PIO, BUT9_PIO_ID, BUT9_PIO_IDX_MASK, PIO_IT_EDGE, Button9_Handler);
 	pio_handler_set(BUT10_PIO, BUT10_PIO_ID, BUT10_PIO_IDX_MASK, PIO_IT_EDGE, Button10_Handler);
@@ -416,6 +461,15 @@ void io_init(void){
 	NVIC_EnableIRQ(BUT4_PIO_ID);
 	NVIC_SetPriority(BUT4_PIO_ID, 5);
 	
+	NVIC_EnableIRQ(BUT5_PIO_ID);
+	NVIC_SetPriority(BUT5_PIO_ID, 5);
+	
+	NVIC_EnableIRQ(BUT6_PIO_ID);
+	NVIC_SetPriority(BUT6_PIO_ID, 5);
+	
+	NVIC_EnableIRQ(BUT7_PIO_ID);
+	NVIC_SetPriority(BUT7_PIO_ID, 5);
+	
 	NVIC_EnableIRQ(BUT8_PIO_ID);
 	NVIC_SetPriority(BUT8_PIO_ID, 5);
 	
@@ -433,7 +487,9 @@ void io_init(void){
 	pio_enable_interrupt(BUT2_PIO, BUT2_PIO_IDX_MASK);
 	pio_enable_interrupt(BUT3_PIO, BUT3_PIO_IDX_MASK);
 	pio_enable_interrupt(BUT4_PIO, BUT4_PIO_IDX_MASK);
-	
+	pio_enable_interrupt(BUT5_PIO, BUT5_PIO_IDX_MASK);
+	pio_enable_interrupt(BUT6_PIO, BUT6_PIO_IDX_MASK);
+	pio_enable_interrupt(BUT7_PIO, BUT7_PIO_IDX_MASK);
 	pio_enable_interrupt(BUT8_PIO, BUT8_PIO_IDX_MASK);
 	pio_enable_interrupt(BUT9_PIO, BUT9_PIO_IDX_MASK);
 	pio_enable_interrupt(BUT10_PIO, BUT10_PIO_IDX_MASK);

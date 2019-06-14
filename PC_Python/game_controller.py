@@ -3,12 +3,22 @@ import argparse
 import time
 import logging
 import pyvjoy  # Windows apenas
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'A': 1, 'B': 2, 'Analog': 3, 'PAxisX': 4, 'NAxisX': 5, 'PAxisY': 6, 'NAxisY': 7, 'Right': 8, 'Up': 9, 'Left': 10, 'Down': 11, 'C' : 12, 'D' : 13 }
+        self.button = {'A': 1, 'B': 2, 'Analog': 3, 'PAxisX': 4, 'NAxisX': 5, 'PAxisY': 6, 'NAxisY': 7, 'Right': 8, 'Up': 9, 'Left': 10, 'Down': 11, 'C' : 12, 'D' : 13 , 'E' : 14, 'F' : 15, 'G' : 16}
 
+
+devices = AudioUtilities.GetSpeakers()
+interface = devices.Activate(
+IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+volume = cast(interface, POINTER(IAudioEndpointVolume))
+print('oi')
+vol = 5.0
 
 class SerialControllerInterface:
 
@@ -21,6 +31,10 @@ class SerialControllerInterface:
         self.mapping = MyControllerMap()
         self.j = pyvjoy.VJoyDevice(1)
         self.incoming = '0'
+        self.vol = 5.0
+        
+
+   
 
     def update(self):
         # Sync protocol
@@ -34,7 +48,8 @@ class SerialControllerInterface:
         #print(data_format)
         um, dois, A, B, cinco, seis, sete, oito, nove, dez, onze, doze, treze, X, Y = data_format
 
-
+        #vol = 5.0
+        
         # Joystick
 
         if nove == '1':
@@ -131,6 +146,37 @@ class SerialControllerInterface:
             print("D")
         elif cinco == '0':
             self.j.set_button(self.mapping.button['D'], 0)
+
+        if seis == '1':
+            logging.info("Sending E")
+            self.j.set_button(self.mapping.button['E'], 1)
+            print("E")
+            print("Aumenta")
+            if(self.vol < 10):
+                self.vol +=1.5
+            volume.SetMasterVolumeLevel(-self.vol, None)
+           
+        elif seis == '0':
+            self.j.set_button(self.mapping.button['E'], 0)
+
+        if sete == '1':
+            logging.info("Sending F")
+            self.j.set_button(self.mapping.button['F'], 1)
+            print("Diminui")
+            if(self.vol >=1.5):
+                self.vol -=1.5
+            volume.SetMasterVolumeLevel(-self.vol, None)
+            
+        elif sete == '0':
+            self.j.set_button(self.mapping.button['F'], 0)
+
+        if oito == '1':
+            logging.info("Sending F")
+            self.j.set_button(self.mapping.button['G'], 1)
+            print("Macro")
+            
+        elif oito == '0':
+            self.j.set_button(self.mapping.button['G'], 0)
         self.incoming = self.ser.read()
 
 
